@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRUD de Alumnos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        button {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<h1>CRUD de Alumnos</h1>
+
+<form id="alumnoForm">
+    <input type="hidden" id="id">
+    <input type="text" id="nombre" placeholder="Nombre" required>
+    <input type="text" id="apellido" placeholder="Apellido" required>
+    <input type="text" id="carrera" placeholder="Carrera" required>
+    <input type="number" id="promedio" placeholder="Promedio" required step="0.1">
+    <button type="submit">Guardar</button>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>Carrera</th>
+        <th>Promedio</th>
+        <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody id="tablaAlumnos">
+    </tbody>
+</table>
+
+<script>
+    const apiUrl = "http://localhost:8080/api/alumnos";
+
+    const form = document.getElementById("alumnoForm");
+    const tabla = document.getElementById("tablaAlumnos");
+
+    async function cargarAlumnos() {
+        const res = await fetch(apiUrl);
+        const alumnos = await res.json();
+        tabla.innerHTML = "";
+        alumnos.forEach(a => {
+            tabla.innerHTML += `
+          <tr>
+            <td>${a.id}</td>
+            <td>${a.nombre}</td>
+            <td>${a.apellido}</td>
+            <td>${a.carrera}</td>
+            <td>${a.promedio}</td>
+            <td>
+              <button onclick="editarAlumno(${a.id}, '${a.nombre}', '${a.apellido}', '${a.carrera}', ${a.promedio})">Editar</button>
+              <button onclick="eliminarAlumno(${a.id})">Eliminar</button>
+            </td>
+          </tr>
+        `;
+        });
+    }
+
+    async function guardarAlumno(e) {
+        e.preventDefault();
+        const id = document.getElementById("id").value;
+        const alumno = {
+            nombre: document.getElementById("nombre").value,
+            apellido: document.getElementById("apellido").value,
+            carrera: document.getElementById("carrera").value,
+            promedio: parseFloat(document.getElementById("promedio").value)
+        };
+
+        if (id) {
+            // Actualizar
+            await fetch(`${apiUrl}/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(alumno)
+            });
+        } else {
+            // Crear nuevo
+            await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(alumno)
+            });
+        }
+
+        form.reset();
+        document.getElementById("id").value = "";
+        cargarAlumnos();
+    }
+
+    function editarAlumno(id, nombre, apellido, carrera, promedio) {
+        document.getElementById("id").value = id;
+        document.getElementById("nombre").value = nombre;
+        document.getElementById("apellido").value = apellido;
+        document.getElementById("carrera").value = carrera;
+        document.getElementById("promedio").value = promedio;
+    }
+
+    async function eliminarAlumno(id) {
+        if (confirm("¿Seguro que deseas eliminar este alumno?")) {
+            await fetch(`${apiUrl}/${id}`, { method: "DELETE" });
+            cargarAlumnos();
+        }
+    }
+
+    form.addEventListener("submit", guardarAlumno);
+    cargarAlumnos();
+</script>
+</body>
+</html>
